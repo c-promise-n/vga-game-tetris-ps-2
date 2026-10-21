@@ -13,12 +13,12 @@ module vga_timing(
     );
     parameter hsync_end = 10'd95,
         hdat_begin = 10'd144,
-        hdat_end = 10'd783,
+        hdat_end = 10'd784,
         hpixel_end = 10'd799,
 
         vsync_end = 10'd1,
         vdat_begin = 10'd35,
-        vdat_end = 10'd514,
+        vdat_end = 10'd515,
         vline_end = 10'd524;
     reg [1:0]cnt;
     always@(posedge clk or negedge rst_n)begin
@@ -28,13 +28,13 @@ module vga_timing(
             cnt <=  cnt+1'b1;
         end
     end
-    assign pixel_ce=cnt[1];
+    assign pixel_ce=(cnt == 2'd3);
 
     reg [9:0]hcount,vcount;
-    always@(posedge pixel_ce or negedge rst_n)begin
+    always@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
             hcount <= 6'b0;
-        end else begin
+        end else if(pixel_ce) begin
             if(hcount==hpixel_end)begin
                 hcount <=   0;
             end else begin
@@ -43,10 +43,10 @@ module vga_timing(
         end
     end
 
-    always @(posedge pixel_ce or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if(!rst_n)begin
              vcount <=6'b0;
-        end else begin
+        end else if(pixel_ce)begin
             if(hcount==hpixel_end)begin
                 if(vcount==vline_end)begin
                     vcount <=   0;
