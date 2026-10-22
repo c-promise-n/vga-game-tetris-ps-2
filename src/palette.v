@@ -5,16 +5,16 @@ module palette(
     );
 
     always @(*) begin
-        case(index):
+        case(index)
         4'h0:rgb={{4'h0},{4'h0},{4'h2}};//backgrand
         4'h1:rgb={{4'h1},{4'h1},{4'h3}};//grid lines
-        4'h2:rgb={{4'h0},{4'hE},{4'hE}};//cyan
-        4'h3:rgb={{4'hF},{4'hE},{4'h0}};//purple
-        4'h4:rgb={{4'hF},{4'hE},{4'h0}};//yellow
-        4'h5:rgb={{4'h0},{4'hE},{4'h0}};//green
-        4'h6:rgb={{4'hF},{4'h0},{4'h0}};//red
-        4'h7:rgb={{4'h0},{4'h2},{4'hF}};//blue
-        4'h8:rgb={{4'hF},{4'h7},{4'h0}};//orange
+        4'h2:rgb={{4'h0},{4'hE},{4'hE}};//cyan:I
+        4'h3:rgb={{4'hF},{4'hE},{4'h0}};//yellow:O
+        4'h4:rgb={{4'hC},{4'h0},{4'hE}};//purple:T
+        4'h5:rgb={{4'h0},{4'hE},{4'h0}};//green:S
+        4'h6:rgb={{4'hF},{4'h0},{4'h0}};//red:Z
+        4'h7:rgb={{4'h0},{4'h2},{4'hF}};//blue:J
+        4'h8:rgb={{4'hF},{4'h7},{4'h0}};//orange:L
         4'h9:rgb={{4'hF},{4'hF},{4'hF}};//white
         4'hA:rgb={{4'h4},{4'h4},{4'h6}};//landing ghost
         4'hB:rgb={{4'h0},{4'h0},{4'h5}};//incell highlight
