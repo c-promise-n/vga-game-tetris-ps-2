@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 module render(
 input [8:0]px_log,
-input [8:0]py_log,
+//input [8:0]py_log,remain for expansion
 input [4:0]col_idx,
 input [4:0]row_idx,
 input [3:0]col_px,
@@ -29,8 +29,10 @@ output reg[3:0]color_idx
     assign grid =((col_px==4'd0)||(row_px==4'd0));
 
     wire [2:0]cell_type;
-    assign occ=field_occ_row[(col_idx<=4'd9)?col_idx:4'd0];
-    assign cell_type=field_type_row[3*col_idx+:3];
+    wire [4:0]cell_c;
+    assign cell_c=(col_idx<=4'd9)?col_idx:5'd0;
+    assign occ=field_occ_row[cell_c];
+    assign cell_type=field_type_row[3*cell_c+:3];
 
 
     wire [5:0]drow,dcol;
@@ -53,7 +55,7 @@ output reg[3:0]color_idx
                 color_idx= 4'hE;
             end
         end else if(in_border)begin
-            color_idx=  4'h9;
+            color_idx=  4'hD;
         end else if(in_panel)begin
             color_idx=4'hF;
         end else begin

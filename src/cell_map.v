@@ -33,10 +33,10 @@ output reg [3:0]row_px
                 col_px<=col_px+1'b1;
                 end
             end
-
+            if(line_start)begin
             if(frame_start)begin
-                row_idx<=4'd0;
-                row_px<=5'd0;
+                row_idx<=5'd0;
+                row_px<=4'd0;
             end else if(py[0]==1'b0)begin
                 if(row_px==11)begin
                     row_px<=4'd0;
@@ -45,7 +45,7 @@ output reg [3:0]row_px
                     row_px<=row_px+1'b1;
                 end
             end
-        
+            end
         end
     end
 endmodule

@@ -19,7 +19,7 @@ module palette(
         4'hA:rgb={{4'h4},{4'h4},{4'h6}};//landing ghost
         4'hB:rgb={{4'h0},{4'h0},{4'h5}};//incell highlight
         4'hC:rgb={{4'hF},{4'hF},{4'hF}};//line-clear flash
-        4'hD:rgb={{4'h8},{4'h8},{4'hA}};//frame
+        4'hD:rgb={{4'h8},{4'h8},{4'hA}};//border
         4'hE:rgb={{4'h0},{4'h0},{4'h2}};//well background
         4'hF:rgb={{4'h0},{4'h0},{4'h0}};//panel background
         default:rgb={{4'h0},{4'h0},{4'h0}};//default black

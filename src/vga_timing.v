@@ -60,5 +60,5 @@ assign hsync= (hcount > hsync_end);
 assign vsync= (vcount > vsync_end);
 assign de=  (hcount>= hdat_begin)&&(hcount < hdat_end)&&(vcount>= vdat_begin)&&(vcount < vdat_end);
 assign px=de?( hcount - hdat_begin):10'd0;
-assign py= vcount - vdat_begin;
+assign py= de?(vcount - vdat_begin):10'd0;
 endmodule
