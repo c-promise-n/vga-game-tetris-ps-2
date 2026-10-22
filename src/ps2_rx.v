@@ -5,16 +5,16 @@ module ps2_rx(
     input pclk,
     input pdata,
     output reg[7:0]scan_code,
-    output reg byte_valid
+    output reg byte_valid,
+    output reg frame_error,
+    output reg parity_error
     );
 
     wire pclk_r2,pclk_r1;
     wire pdata_r2,pdata_r1;
     wire pclk_fall;
 
-    sync_2ff #(
-    .width(/* default 1 */)
-    ) pclk_sync_2ff (
+    sync_2ff pclk_sync_2ff (
         .clk      (clk),
         .rst_n    (rst_n),
         .async_in (pclk),
@@ -22,9 +22,7 @@ module ps2_rx(
         .sync_out1(pclk_r1)
     );
     assign pclk_fall = pclk_r2 &(~pclk_r1);
-    sync_2ff #(
-        .width(/* default 1 */)
-     ) sync_2ff (
+    sync_2ff pdata_sync_2ff (
         .clk      (clk),
         .rst_n    (rst_n),
         .async_in (pdata),
@@ -33,7 +31,7 @@ module ps2_rx(
     );
 
     localparam IDLE = 1'b0,
-                BIT =1'B1;
+                DATA =1'B1;
 
     reg cur_state,next_state;
     always @(posedge clk or negedge rst_n) begin
@@ -44,27 +42,42 @@ module ps2_rx(
         end
     end
 
-    reg [2:0]cnt;
+    reg [3:0]cnt;
+    reg par;
+    reg [7:0]shift;
     always @(*) begin
+        byte_valid=1'b0;
+        parity_error=1'b0;
+        frame_error=1'b0;
         next_state=cur_state;
         case(cur_state)
 
-        IDLE:if(pclk_fall&&pdata_r2==0)begin
-            next_state = BIT;
-            cnt =3'b0;
+        IDLE:if(pclk_fall&&pdata_r2==1'b0)begin
+            next_state = DATA;
+            cnt =4'b0;
         end else begin
-            byte_valid=1'b0;
             next_state = IDLE;
         end
 
-        BIT:if(pclk_fall)begin
-            scan_code = {pdata_r2,scan_code[7:1]};
-            next_state=BIT;
-            cnt =cnt +1;
-        end else if(cnt==3'd7)begin
-            byte_valid =1'b1;
-            cnt=3'b0;
-            next_state=IDLE;
+        DATA:if(pclk_fall)begin
+            if(cnt<=7)begin
+                shift = {pdata_r2,shift[7:1]};
+                cnt = cnt +1;
+                next_state=DATA;
+            end else if(cnt == 8)begin
+                cnt=4'd9;
+                par=~^shift;
+                next_state=DATA;
+            end else begin
+                if(pdata_r2!=1'b1) frame_error=1'b1;
+                else if((^shift^par)!=1'b1) parity_error=1'b1;
+                else begin
+                    scan_code=shift;
+                    byte_valid=1'b1;
+                end
+                next_state=IDLE;
+                cnt=4'b0;
+            end
         end
         endcase
     end
