@@ -31,7 +31,7 @@ module ps2_rx(
     );
 
     localparam IDLE = 1'b0,
-                DATA =1'B1;
+                DATA =1'b1;
 
     reg cur_state,next_state;
     always @(posedge clk or negedge rst_n) begin
@@ -46,39 +46,59 @@ module ps2_rx(
     reg par;
     reg [7:0]shift;
     always @(*) begin
-        byte_valid=1'b0;
-        parity_error=1'b0;
-        frame_error=1'b0;
         next_state=cur_state;
         case(cur_state)
 
         IDLE:if(pclk_fall&&pdata_r2==1'b0)begin
             next_state = DATA;
-            cnt =4'b0;
         end else begin
             next_state = IDLE;
         end
 
         DATA:if(pclk_fall)begin
             if(cnt<=7)begin
-                shift = {pdata_r2,shift[7:1]};
-                cnt = cnt +1;
                 next_state=DATA;
             end else if(cnt == 8)begin
-                cnt=4'd9;
-                par=~^shift;
                 next_state=DATA;
             end else begin
-                if(pdata_r2!=1'b1) frame_error=1'b1;
-                else if((^shift^par)!=1'b1) parity_error=1'b1;
-                else begin
-                    scan_code=shift;
-                    byte_valid=1'b1;
-                end
                 next_state=IDLE;
-                cnt=4'b0;
             end
         end
         endcase
+    end
+
+    always@(posedge clk or negedge rst_n)begin
+        if(!rst_n)begin
+            cnt <=4'b0;
+            par<=1'b0;
+            shift<=8'b0;
+            frame_error<=1'b0;
+            scan_code <=8'b0;
+            byte_valid<=1'b0;
+        end else begin
+            case(cur_state)
+        IDLE:if(pclk_fall&&pdata_r2==1'b0)begin
+            cnt <=4'b0;
+        end
+
+        DATA:if(pclk_fall)begin
+            if(cnt<=7)begin
+                shift <= {pdata_r2,shift[7:1]};
+                cnt <= cnt + 4'b1;
+            end else if(cnt == 8)begin
+                cnt<=4'd9;
+                par<=pdata_r2;
+            end else begin
+                if(pdata_r2!=1'b1) frame_error<=1'b1;
+                else if((^shift^par)!=1'b1) parity_error<=1'b1;
+                else begin
+                    scan_code<=shift;
+                    byte_valid<=1'b1;
+                end
+                cnt<=4'b0;
+            end
+        end
+        endcase
+        end
     end
 endmodule
