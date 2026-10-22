@@ -4,7 +4,8 @@ input clk,
 input rst_n,
 input hsync_i,
 input vsync_i,
-input reg [11:0]rgb_i,
+input de_i,
+input [11:0]rgb_i,
 output reg hsync_o,
 output reg vsync_o,
 output reg [11:0]rgb_o
@@ -12,13 +13,13 @@ output reg [11:0]rgb_o
 
 always@(posedge clk or negedge rst_n)begin
     if(!rst_n)begin
-        hsync_o<=1'b0;
-        vsync_o<=1'b0;
+        hsync_o<=1'b1;
+        vsync_o<=1'b1;
         rgb_o<=12'b0;
     end else begin
         hsync_o<=hsync_i;
         vsync_o<=vsync_i;
-        rgb_o<=rgb_i;
+        rgb_o<= de_i?rgb_i:12'h000;
     end
 end
 
