@@ -33,7 +33,7 @@ module vga_timing(
     reg [9:0]hcount,vcount;
     always@(posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            hcount <= 6'b0;
+            hcount <= 10'b0;
         end else if(pixel_ce) begin
             if(hcount==hpixel_end)begin
                 hcount <=   0;
@@ -45,7 +45,7 @@ module vga_timing(
 
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n)begin
-             vcount <=6'b0;
+             vcount <=10'b0;
         end else if(pixel_ce)begin
             if(hcount==hpixel_end)begin
                 if(vcount==vline_end)begin
@@ -59,6 +59,6 @@ module vga_timing(
 assign hsync= (hcount > hsync_end);
 assign vsync= (vcount > vsync_end);
 assign de=  (hcount>= hdat_begin)&&(hcount < hdat_end)&&(vcount>= vdat_begin)&&(vcount < vdat_end);
-assign px= hcount - hdat_begin;
+assign px=de?( hcount - hdat_begin):10'd0;
 assign py= vcount - vdat_begin;
 endmodule
