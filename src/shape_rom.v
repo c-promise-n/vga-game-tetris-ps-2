@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
-// 位编号约定：  bit index = drow*4 + dcol
-//               drow = 0 在最上，dcol = 0 在最左
-//               bit0 = 左上角，bit15 = 右下角
-// type: 0=I 1=O 2=T 3=S 4=Z 5=J 6=L
+// bit numbering scheme:bit index = drow*4 + dcol
+//               drow = 0 topmost，dcol = 0 leftmost
+//               bit0 = top-left corner，bit15 = bottom-right corner
+// bricktype: 0=I 1=O 2=T 3=S 4=Z 5=J 6=L
 
 module shape_rom(
-    input  wire [2:0]  bricktype,       // 0..6
-    input  wire [1:0]  rot,        // 0..3
+    input  wire [2:0]  bricktype,
+    input  wire [1:0]  rot,
     output reg  [15:0] mask
 );
 always @(*) begin
