@@ -75,7 +75,11 @@ module ps2_rx(
             frame_error<=1'b0;
             scan_code <=8'b0;
             byte_valid<=1'b0;
+            parity_error<=1'b0;
         end else begin
+            byte_valid<=1'b0;
+            parity_error<=1'b0;
+            frame_error<=1'b0;
             case(cur_state)
         IDLE:if(pclk_fall&&pdata_r2==1'b0)begin
             cnt <=4'b0;
