@@ -30,6 +30,8 @@ output reg code_valid
                     ext<=1'b1;
                 end else if(scan_code==8'hF0)begin
                     brk<=1'b1;
+                end else if(scan_code==8'hE1)begin
+                    pause_cnt<=3'd7;
                 end else begin
                     code_valid<=1'b1;
                     code<=scan_code;
