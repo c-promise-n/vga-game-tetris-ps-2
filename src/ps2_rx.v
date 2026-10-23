@@ -45,8 +45,7 @@ module ps2_rx(
 
     wire timeout;
     assign timeout=(&idle_cnt)&&(cur_state==DATA);
-   
-    always @(posedge clk or negedge rst_n) begin
+       always @(posedge clk or negedge rst_n) begin
         if(!rst_n)begin
             cur_state <= IDLE;
         end else begin
