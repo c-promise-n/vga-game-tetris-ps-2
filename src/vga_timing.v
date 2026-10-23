@@ -5,6 +5,7 @@ module vga_timing(
 
     output de,//data enable
     output pixel_ce,
+    output frame_tick,
 
     output [9:0]px,
     output [9:0]py,
@@ -61,4 +62,5 @@ assign vsync= (vcount > vsync_end);
 assign de=  (hcount>= hdat_begin)&&(hcount < hdat_end)&&(vcount>= vdat_begin)&&(vcount < vdat_end);
 assign px=de?( hcount - hdat_begin):10'd0;
 assign py= de?(vcount - vdat_begin):10'd0;
+assign frame_tick=pixel_ce&&(hcount==10'd0)&&(vcount==10'd0);
 endmodule
