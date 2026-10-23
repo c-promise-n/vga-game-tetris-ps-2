@@ -32,8 +32,20 @@ module ps2_rx(
 
     localparam IDLE = 1'b0,
                 DATA =1'b1;
-
     reg cur_state,next_state;
+    reg [15:0]idle_cnt;
+
+    always@(posedge clk or negedge rst_n)begin
+        if(!rst_n)begin
+            idle_cnt<=16'b0;
+        end else if(pclk_fall) idle_cnt<= 16'b0;
+        else if(&idle_cnt) idle_cnt<=idle_cnt;
+        else idle_cnt<=idle_cnt+1'b1;
+    end
+
+    wire timeout;
+    assign timeout=(&idle_cnt)&&(cur_state==DATA);
+   
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n)begin
             cur_state <= IDLE;
@@ -55,7 +67,8 @@ module ps2_rx(
             next_state = IDLE;
         end
 
-        DATA:if(pclk_fall)begin
+        DATA:if(!timeout)begin
+            if(pclk_fall)begin
             if(cnt<=7)begin
                 next_state=DATA;
             end else if(cnt == 8)begin
@@ -64,6 +77,7 @@ module ps2_rx(
                 next_state=IDLE;
             end
         end
+        end else next_state=IDLE;
         endcase
     end
 
