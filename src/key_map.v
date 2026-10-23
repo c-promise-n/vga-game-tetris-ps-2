@@ -32,8 +32,6 @@ always @(posedge clk or negedge rst_n) begin
                 key_down<=1'b0;
             end else begin
                 key_down<=1'b1;
-            end
-
             case ({is_ext,code})
                 9'h1_6B:begin
                     key_id<=3'd0;
@@ -77,6 +75,7 @@ always @(posedge clk or negedge rst_n) begin
 
                 default: key_hit<=1'b0 ;
             endcase
+            end
         end
     end
 end
