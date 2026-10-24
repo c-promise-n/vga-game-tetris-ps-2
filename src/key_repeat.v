@@ -30,7 +30,7 @@ module key_repeat#(
                 end
                 cnt_das<=cnt_das+1'b1;
             end else begin
-                if(cnt_arr==ARR)begin
+                if(cnt_arr==ARR-1)begin
                     cnt_arr<=4'b0;
                     pulse<=1'b1;
                 end else begin

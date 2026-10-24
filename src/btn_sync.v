@@ -3,7 +3,7 @@ module btn_sync(
 input clk,
 input rst_n,
 input btn_l,btn_r,btn_u,btn_d,
-output [7:0]btn_precessed
+output [7:0]btn_pressed
     );
 
     wire lv_l,lv_r,lv_u,lv_d;
@@ -36,7 +36,7 @@ output [7:0]btn_precessed
 
     debounce #(
         .CNT_MAX(2_000_000)
-     ) debounce (
+    ) btn_d_debounce (
         .clk      (clk),
         .rst_n    (rst_n),
         .noisy_in (btn_d),
@@ -44,5 +44,5 @@ output [7:0]btn_precessed
     );
 
     //bit3=ROTATE,bit2=DOWN,bit1=RIGHT,bit0=LEFT
-    assign btn_precessed={4'b0000,lv_u,lv_d,lv_r,lv_l};
+    assign btn_pressed={4'b0000,lv_u,lv_d,lv_r,lv_l};
 endmodule
