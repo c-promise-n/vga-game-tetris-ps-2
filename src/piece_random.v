@@ -70,7 +70,7 @@ output reg [2:0]piece_type
 
             HOLD:begin
                 if(spawn)begin
-                    if(used==7'hF)begin
+                    if(used==8'hF)begin
                         used<=8'd0;
                     end
                 end
