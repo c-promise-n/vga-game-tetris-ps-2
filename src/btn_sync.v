@@ -3,11 +3,11 @@ module btn_sync(
 input clk,
 input rst_n,
 input btn_l,btn_r,btn_u,btn_d,btn_c,
-input sw_pause,sw_restart,
+input sw_pause,sw_restart,sw_start,
 output [7:0]btn_pressed
     );
 
-    wire lv_l,lv_r,lv_u,lv_d,lv_c,lv_pause,lv_restart;
+    wire lv_l,lv_r,lv_u,lv_d,lv_c,lv_pause,lv_restart,lv_start;
 
     debounce #(
         .CNT_MAX(2_000_000)
@@ -69,6 +69,14 @@ output [7:0]btn_pressed
         .noisy_in (sw_restart),
         .clean_out(lv_restart)
     );
-    //bit6=RESTART,bit_5=PAUSE,bit4=DROP,bit3=ROTATE,bit2=DOWN,bit1=RIGHT,bit0=LEFT
-    assign btn_pressed={1'b0,lv_restart,lv_pause,lv_c,lv_u,lv_d,lv_r,lv_l};
+    debounce #(
+        .CNT_MAX(2_000_000)
+     ) debounce (
+        .clk      (clk),
+        .rst_n    (rst_n),
+        .noisy_in (sw_start),
+        .clean_out(lv_start)
+    );
+    //bit7=start,bit6=RESTART,bit5=PAUSE,bit4=DROP,bit3=ROTATE,bit2=DOWN,bit1=RIGHT,bit0=LEFT
+    assign btn_pressed={lv_start,lv_restart,lv_pause,lv_c,lv_u,lv_d,lv_r,lv_l};
 endmodule
