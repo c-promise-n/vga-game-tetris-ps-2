@@ -19,8 +19,8 @@ output reg [4:0]p_x,
 output reg [4:0]p_y,
 output reg [15:0]p_mask,
 
-output reg[2:0]next_type,
-output reg[15:0]next_mask,
+output wire[2:0]next_type,
+output wire[15:0]next_mask,
 
 
 output reg[15:0]score
