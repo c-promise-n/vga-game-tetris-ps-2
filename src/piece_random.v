@@ -76,8 +76,6 @@ output reg [2:0]piece_type
                     retry<=4'd0;
                     state<=DRAW;
                 end
-                retry<=4'd0;
-                state<=DRAW;
             end
 
             default:state<=INIT;
