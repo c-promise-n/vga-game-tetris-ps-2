@@ -11,7 +11,7 @@ output reg [2:0]piece_type
     wire[15:0]lfsr_nx;
     assign lfsr_nx={lfsr[14:0],lfsr[15] ^ lfsr[13] ^ lfsr[12] ^ lfsr[10]};
 
-    wire [2:0]  cand ;
+    wire [2:0]  cand;
     assign cand = lfsr[2:0];
 
     wire free;
@@ -70,9 +70,11 @@ output reg [2:0]piece_type
 
             HOLD:begin
                 if(spawn)begin
-                    if(used==8'hF)begin
+                    if(used[6:0]==7'h7F)begin
                         used<=8'd0;
                     end
+                    retry<=4'd0;
+                    state<=DRAW;
                 end
                 retry<=4'd0;
                 state<=DRAW;
