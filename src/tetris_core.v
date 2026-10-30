@@ -97,6 +97,7 @@ output reg[15:0]score
              PAUSE=2'd2,
              OVER=2'd3;
   reg game_over;
+  wire drop,down;
   reg [1:0]cur_state,next_state;
   wire start_paulse,restart_paulse,pause_pulse;
   assign start_paulse=key_edge[7]|key_edge[6];
@@ -205,7 +206,7 @@ endgenerate
         pr_spawn<=1'b0;
         lock_cnt<=5'd0;
         lc_issued<=1'd0;
-        grav_cnt<=1'b0;
+        grav_cnt<=8'b0;
         game_over<=1'b0;
         phase<=P_FALL;
         lc_start<=1'b0;
@@ -215,6 +216,7 @@ endgenerate
         wp<=5'd19;
         lc_n<=3'd0;
         lc_issued<=1'b0;
+        score<=16'b0;
     end else begin
       pr_spawn<=1'b0;
       game_over<=1'b0;
@@ -222,15 +224,19 @@ endgenerate
       lc_done<=1'b0;
 
       if(restart_paulse)begin
+        for(r=0;r<20;r=r+1)begin
+          field_occ[r]<=10'd0;
+          field_type[r]<=30'd0;
+        end
         p_type  <=3'd0;
         p_rot   <=2'd0;
-        p_x     <=5'd0;
+        p_x     <=5'd3;
         p_y     <=5'd0;
         next_type<=3'd0;
         pr_spawn<=1'b0;
         lock_cnt<=5'd0;
         lc_issued<=1'd0;
-        grav_cnt<=1'b0;
+        grav_cnt<=8'b0;
         game_over<=1'b0;
         phase<=P_FALL;
         lc_start<=1'b0;
@@ -240,6 +246,7 @@ endgenerate
         wp<=5'd19;
         lc_n<=3'd0;
         lc_issued<=1'b0;
+        score<=16'b0;
       end else begin
 
 
