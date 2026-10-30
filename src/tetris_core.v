@@ -17,9 +17,9 @@ output reg [2:0]p_type,
 output reg [1:0]p_rot,
 output reg [4:0]p_x,
 output reg [4:0]p_y,
-output reg [15:0]p_mask,
+output wire [15:0]p_mask,
 
-output wire[2:0]next_type,
+output reg[2:0]next_type,
 output wire[15:0]next_mask,
 
 
@@ -67,16 +67,22 @@ output reg[15:0]score
     reg[19:0]row_i;
     begin
       collide=1'b0;
+      if(b_x>5'd9)begin
+        collide=1'b1;
+      end else begin
       for(i=0;i<4;i=i+1)begin
-        row_i={10'd0,b_mask[i*4 +: 4]};
+        row_i={16'd0,b_mask[i*4 +: 4]};
         row_i=row_i <<b_x;
+        if(row_i!=20'd0)begin
         if((b_y + i)>19)
         collide=1'd1;
         else if(row_i>20'h03FF)
         collide=1'b1;
         else if((row_i[9:0]&field_occ[b_y+i])!=10'b0)
         collide=1'b1;
+        end
       end
+    end
     end
   endfunction
 
