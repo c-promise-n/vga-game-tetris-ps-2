@@ -64,7 +64,7 @@ output reg[15:0]score
     input[4:0]b_y;
     input [15:0]b_mask;
     integer i;
-    reg[13:0]row_i;
+    reg[19:0]row_i;
     begin
       collide=1'b0;
       for(i=0;i<4;i=i+1)begin
@@ -72,7 +72,7 @@ output reg[15:0]score
         row_i=row_i <<b_x;
         if((b_y + i)>19)
         collide=1'd1;
-        else if(row_i>14'h03FF)
+        else if(row_i>20'h03FF)
         collide=1'b1;
         else if((row_i[9:0]&field_occ[b_y+i])!=10'b0)
         collide=1'b1;
@@ -133,7 +133,7 @@ output reg[15:0]score
   wire landed;
 
 
-  reg[13:0]row_j;
+  reg[19:0]row_j;
   assign landed=collide(p_x, p_y +5'd1/* logic[4:0] */, p_mask /* logic[15:0] */);
 
  localparam GRAV =8'd30;
@@ -151,11 +151,11 @@ output reg[15:0]score
   task do_lock;
   begin
           for(j=0;j<4;j=j+1)begin
-            row_j={10'd0,p_mask[j*4 +: 4]};
-            row_j=row_j>>p_x;
-            if((p_y+j<=19)&&(row_j<=14'h03FF))begin
+            row_j={16'd0,p_mask[j*4 +: 4]};
+            row_j=row_j<<p_x;
+            if((p_y+j<=19)&&(row_j<=20'h03FF))begin
               field_occ[p_y+j]<=field_occ[p_y+j] | row_j[9:0];
-              field_type[p_y+j]<=field_type[p_y+j]|type_expand(field_occ[p_y+j] /* logic[9:0] */, p_type /* logic[2:0] */);
+              field_type[p_y+j]<=field_type[p_y+j]|type_expand(row_j[9:0] /* logic[9:0] */, p_type /* logic[2:0] */);
             end
           end
   end
@@ -251,7 +251,7 @@ endgenerate
 
       if(piece_active && !move_left && move_right)begin
         if(!collide(p_x+5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, p_mask /* logic[15:0] */))begin
-          p_x=p_x+1'b1;
+          p_x<=p_x+1'b1;
         end
       end
 
@@ -261,19 +261,19 @@ endgenerate
         end
             else if(!collide(p_x-5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
               p_rot<=rot_nx;
-              p_x=p_x-5'd1;
+              p_x<=p_x-5'd1;
             end
             else if(!collide(p_x+5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
               p_rot<=rot_nx;
-              p_x=p_x+5'd1;
+              p_x<=p_x+5'd1;
             end
             else if(!collide(p_x-5'd2 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
               p_rot<=rot_nx;
-              p_x=p_x-5'd2;
+              p_x<=p_x-5'd2;
             end
             else if(!collide(p_x+5'd2 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
               p_rot<=rot_nx;
-              p_x=p_x+5'd2;
+              p_x<=p_x+5'd2;
             end
       end
 
@@ -283,7 +283,7 @@ endgenerate
 
       if(cur_state==PLAY&&phase==P_DROP)begin
         if(!collide(p_x /* logic[4:0] */, p_y+5'd1 /* logic[4:0] */, p_mask /* logic[15:0] */))begin
-          p_y=p_y+5'd1;
+          p_y<=p_y+5'd1;
           score<=score+16'd2;
         end else begin
           do_lock();
@@ -298,7 +298,7 @@ endgenerate
           P_FALL:begin
             if(down)begin
               if(!landed)begin
-                p_y=p_y+5'd1;
+                p_y<=p_y+5'd1;
                 score<=score+16'd1;
               end else begin
                 lock_cnt<=5'd0;
@@ -313,7 +313,7 @@ endgenerate
             end
             end else begin
             lock_cnt<=5'd0;
-            phase=P_TOUCH;
+            phase<=P_TOUCH;
             grav_cnt<=8'd0;
             end
           end
@@ -347,7 +347,13 @@ endgenerate
       end
 
       if(lc_done)begin
-        score<=score+lc_n;
+        case (lc_n)
+          3'd1:score<=score+16'd100;
+          3'd2:score<=score+16'd300;
+          3'd3:score<=score+16'd500;
+          3'd4:score<=score+16'd800;
+          default: score<=score;
+        endcase
         do_spawn;
         lc_issued<=1'b0;
       end
@@ -366,7 +372,7 @@ endgenerate
 
       L_COLL:begin
         if(full_lat[rp])begin
-        lc_n=lc_n+3'b1;
+        lc_n<=lc_n+3'b1;
         end else begin
           field_occ[wp]<=field_occ[rp];
           field_type[wp]<=field_type[rp];
