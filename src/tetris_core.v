@@ -5,7 +5,6 @@ input rst_n,
 
 input frame_tick,
 
-input [7:0]key_pressed,
 input [7:0]key_edge,
 input move_left,
 input move_right,
@@ -52,6 +51,13 @@ output reg[15:0]score
     .spawn     (pr_spawn),
     .piece_type(pr_type)
   );
+  wire [1:0]rot_nx=p_rot+2'd1;
+  wire[15:0]mask_try;
+  shape_rom u_rom_try (
+    .bricktype(p_type),
+    .rot      (rot_nx),
+    .mask     (mask_try)
+  );
 
   function automatic collide;
     input[4:0]b_x;
@@ -96,6 +102,10 @@ output reg[15:0]score
   assign start_paulse=key_edge[7]|key_edge[6];
   assign restart_paulse=key_edge[6];
   assign pause_pulse=key_edge[5];
+  assign drop=key_edge[4];
+  assign down=key_edge[2];
+  wire rotate;
+  assign rotate=key_edge[3];
   always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
       cur_state<=IDLE;
@@ -121,32 +131,118 @@ output reg[15:0]score
 
   integer r,j;
   wire landed;
-  wire piece_active=(cur_state==PLAY);
-  reg spawn_pending;
+
+
   reg[13:0]row_j;
   assign landed=collide(p_x, p_y +5'd1/* logic[4:0] */, p_mask /* logic[15:0] */);
 
  localparam GRAV =8'd30;
  reg [7:0]grav_cnt;
 
+ localparam P_FALL = 2'd0,P_TOUCH=2'd1,P_DROP=2'd2,P_SETTLE=2'd3;
+ parameter lock_delay = 5'd30;
+ reg [1:0]phase;
+  wire piece_active=(cur_state==PLAY)&&(phase==(P_FALL||P_TOUCH));
+
+  reg lc_issued,lc_start,lc_done;
+
+  reg [4:0]lock_cnt;
+
+  task do_lock;
+  begin
+          for(j=0;j<4;j=j+1)begin
+            row_j={10'd0,p_mask[j*4 +: 4]};
+            row_j=row_j>>p_x;
+            if((p_y+1<=19)&&(row_j>14'h03FF))begin
+              field_occ[p_y+j]<=field_occ[p_y+j] | row_j[9:0];
+              field_type[p_y+j]<=field_type[p_y+j]|type_expand(field_occ[p_y+j] /* logic[9:0] */, p_type /* logic[2:0] */);
+            end
+          end
+  end
+  endtask
+
+  task do_spawn;
+  begin
+          p_type<=next_type;
+          p_rot<=2'b0;
+          p_x=5'd3;
+          p_y=5'd0;
+          next_type<=pr_type;
+          pr_spawn<=1'b1;
+          grav_cnt<=8'd0;
+          lock_cnt<=5'd0;
+          phase<=P_FALL;
+          if(collide(5'd3, 5'd0 /* logic[4:0] */, next_mask /* logic[15:0] */)) game_over<=1'b0;
+  end
+  endtask
+
+localparam L_IDLE = 2'd0,
+            L_COLL=2'd1,
+            L_FILL=2'd2;
+
+reg [1:0]lc_state;
+reg [4:0]rp,wp;
+wire [19:0]full_now;
+reg [19:0] full_lat;
+reg [2:0]lc_n;
+genvar gi;
+generate
+  for(gi=0;gi<20;gi=gi+1)begin:g_full
+    assign full_now[gi]={field_occ[gi]==10'h3FF};
+  end
+endgenerate
   always@(posedge clk or negedge rst_n)begin
-    if(!rst_n)begin
-      for(r=0;r<20;r=r+1)begin
-        field_occ[r]<=10'd0;
-        field_type[r]<=30'd0;
-      end
-      p_type  <=3'd0;
-      p_rot   <=2'd0;
-      p_x     <=5'd0;
-      p_y     <=5'd0;
-      next_type<=3'd0;
-      pr_spawn<=1'b0;
-      spawn_pending<=1'b0;
-      grav_cnt<=1'b0;
-      game_over<=1'b0;
+      if(!rst_n)begin
+        for(r=0;r<20;r=r+1)begin
+          field_occ[r]<=10'd0;
+          field_type[r]<=30'd0;
+        end
+        p_type  <=3'd0;
+        p_rot   <=2'd0;
+        p_x     <=5'd0;
+        p_y     <=5'd0;
+        next_type<=3'd0;
+        pr_spawn<=1'b0;
+        lock_cnt<=5'd0;
+        lc_issued<=1'd0;
+        grav_cnt<=1'b0;
+        game_over<=1'b0;
+        phase<=P_FALL;
+        lc_start<=1'b0;
+        lc_done<=1'b0;
+        lc_state<=L_IDLE;
+        rp<=5'd19;
+        wp<=5'd19;
+        lc_n<=3'd0;
+        lc_issued<=1'b0;
     end else begin
       pr_spawn<=1'b0;
       game_over<=1'b0;
+      lc_start<=1'b0;
+      lc_done<=1'b0;
+
+      if(restart_paulse)begin
+        p_type  <=3'd0;
+        p_rot   <=2'd0;
+        p_x     <=5'd0;
+        p_y     <=5'd0;
+        next_type<=3'd0;
+        pr_spawn<=1'b0;
+        lock_cnt<=5'd0;
+        lc_issued<=1'd0;
+        grav_cnt<=1'b0;
+        game_over<=1'b0;
+        phase<=P_FALL;
+        lc_start<=1'b0;
+        lc_done<=1'b0;
+        lc_state<=L_IDLE;
+        rp<=5'd19;
+        wp<=5'd19;
+        lc_n<=3'd0;
+        lc_issued<=1'b0;
+      end else begin
+
+
       if(piece_active && move_left && !move_right)begin
         if(!collide(p_x-5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, p_mask /* logic[15:0] */))begin
           p_x=p_x-1'b1;
@@ -159,39 +255,141 @@ output reg[15:0]score
         end
       end
 
-      if(frame_tick && piece_active)begin
-        if(!landed)begin
-          if(grav_cnt == GRAV-1'b1)begin
-            grav_cnt<=8'd0;
-            p_y<=p_y+5'd1;
-          end else begin
-            grav_cnt<=grav_cnt+8'd1;
-          end
-        end else begin
-          for(j=0;j<4;j=j+1)begin
-            row_j={10'd0,p_mask[j*4 +: 4]};
-            row_j=row_j>>p_x;
-            if((p_y+1<=19)&&(row_j>14'h03FF))begin
-              field_occ[p_y+j]<=field_occ[p_y+j] | row_j[9:0];
-              field_type[p_y+j]<=field_type[p_y+j]|type_expand(field_occ[p_y+j] /* logic[9:0] */, p_type /* logic[2:0] */);
-            end
-          end
-        spawn_pending<=1'b1;
-        grav_cnt<=8'd0;
+      if(piece_active && rotate)begin
+        if(!collide(p_x /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
+          p_rot<=rot_nx;
         end
+            else if(!collide(p_x-5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
+              p_rot<=rot_nx;
+              p_x=p_x-5'd1;
+            end
+            else if(!collide(p_x-5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
+              p_rot<=rot_nx;
+              p_x=p_x+5'd1;
+            end
+            else if(!collide(p_x-5'd2 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
+              p_rot<=rot_nx;
+              p_x=p_x-5'd2;
+            end
+            else if(!collide(p_x+5'd2 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
+              p_rot<=rot_nx;
+              p_x=p_x+5'd2;
+            end
+      end
 
-        if(spawn_pending)begin
-          p_type<=next_type;
-          p_rot<=2'b0;
-          p_x=5'd3;
-          p_y=5'd0;
-          next_type<=pr_type;
-          pr_spawn<=1'b1;
-          spawn_pending<=1'b0;
-          if(collide(5'd3, 5'd0 /* logic[4:0] */, next_mask /* logic[15:0] */)) game_over<=1'b0;
+      if(piece_active && drop)begin
+        phase<=P_DROP;
+      end
+
+      if(cur_state==PLAY&&phase==P_DROP)begin
+        if(!collide(p_x /* logic[4:0] */, p_y+5'd1 /* logic[4:0] */, p_mask /* logic[15:0] */))begin
+          p_y=p_y+5'd1;
+          score<=score+16'd2;
+        end else begin
+          do_lock();
+          lc_issued<=1'd0;
+          phase<=P_SETTLE;
         end
       end
 
+      if(frame_tick && piece_active)begin
+        case(phase)
+
+          P_FALL:begin
+            if(down)begin
+              if(!landed)begin
+                p_y=p_y+5'd1;
+                score<=score+16'd1;
+              end else begin
+                lock_cnt<=5'd0;
+                phase<=P_TOUCH;
+              end
+            end else if(!landed)begin
+            if(grav_cnt == GRAV-1'b1)begin
+              grav_cnt<=8'd0;
+              p_y<=p_y+5'd1;
+            end else begin
+              grav_cnt<=grav_cnt+8'd1;
+            end
+            end else begin
+            lock_cnt<=5'd0;
+            phase=P_TOUCH;
+            grav_cnt<=8'd0;
+            end
+          end
+
+          P_TOUCH:begin
+            if(!landed)begin
+              lock_cnt<=5'd0;
+              phase<=P_FALL;
+              grav_cnt<=8'd0;
+            end else if(lock_cnt==lock_delay)begin
+              do_lock();
+              lc_issued<=1'd0;
+              phase<=P_SETTLE;
+            end else begin
+              lock_cnt<=lock_cnt+5'd1;
+            end
+          end
+
+          P_SETTLE:begin
+            if((lc_state==IDLE)&&(!lc_issued))begin
+              if(|full_now)begin
+                lc_start<=1'b1;
+                lc_issued<=1'b1;
+              end else begin
+                do_spawn;
+              end
+            end
+          end
+
+        endcase
+      end
+
+      if(lc_done)begin
+        score<=score+lc_n;
+        do_spawn;
+        lc_issued<=1'b0;
+      end
+
+      case(lc_state)
+
+      L_IDLE:begin
+        rp<=5'd19;
+        wp<=5'd19;
+        lc_n<=3'd0;
+        if(lc_start&&(|full_now))begin
+          full_lat<=full_now;
+          lc_state<=L_COLL;
+        end
+      end
+
+      L_COLL:begin
+        if(full_lat[rp])begin
+        lc_n=lc_n+3'b1;
+        end else begin
+          field_occ[wp]<=field_occ[rp];
+          field_type[wp]<=field_type[rp];
+          wp<=wp-5'd1;
+        end
+        if(rp==5'd0) lc_state<=L_FILL;
+        else rp<=rp-5'd1;
+      end
+
+      L_FILL:begin
+        field_occ[wp]<=10'd0;
+        field_type[wp]<=30'd0;
+        if(wp==5'd0)begin
+          lc_state<=L_IDLE;
+          lc_done<=1'b1;
+        end else begin
+          wp<=wp-5'd1;
+        end
+      end
+      endcase
     end
   end
+  end
+
+
 endmodule
