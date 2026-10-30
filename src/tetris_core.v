@@ -69,7 +69,7 @@ output reg[15:0]score
       collide=1'b0;
       for(i=0;i<4;i=i+1)begin
         row_i={10'd0,b_mask[i*4 +: 4]};
-        row_i=row_i>>b_x;
+        row_i=row_i <<b_x;
         if((b_y + i)>19)
         collide=1'd1;
         else if(row_i>14'h03FF)
@@ -142,7 +142,7 @@ output reg[15:0]score
  localparam P_FALL = 2'd0,P_TOUCH=2'd1,P_DROP=2'd2,P_SETTLE=2'd3;
  parameter lock_delay = 5'd30;
  reg [1:0]phase;
-  wire piece_active=(cur_state==PLAY)&&(phase==(P_FALL||P_TOUCH));
+  wire piece_active=(cur_state==PLAY)&&((phase==P_FALL)||(phase==P_TOUCH));
 
   reg lc_issued,lc_start,lc_done;
 
@@ -153,7 +153,7 @@ output reg[15:0]score
           for(j=0;j<4;j=j+1)begin
             row_j={10'd0,p_mask[j*4 +: 4]};
             row_j=row_j>>p_x;
-            if((p_y+1<=19)&&(row_j>14'h03FF))begin
+            if((p_y+j<=19)&&(row_j<=14'h03FF))begin
               field_occ[p_y+j]<=field_occ[p_y+j] | row_j[9:0];
               field_type[p_y+j]<=field_type[p_y+j]|type_expand(field_occ[p_y+j] /* logic[9:0] */, p_type /* logic[2:0] */);
             end
@@ -165,14 +165,14 @@ output reg[15:0]score
   begin
           p_type<=next_type;
           p_rot<=2'b0;
-          p_x=5'd3;
-          p_y=5'd0;
+          p_x<=5'd3;
+          p_y<=5'd0;
           next_type<=pr_type;
           pr_spawn<=1'b1;
           grav_cnt<=8'd0;
           lock_cnt<=5'd0;
           phase<=P_FALL;
-          if(collide(5'd3, 5'd0 /* logic[4:0] */, next_mask /* logic[15:0] */)) game_over<=1'b0;
+          if(collide(5'd3, 5'd0 /* logic[4:0] */, next_mask /* logic[15:0] */)) game_over<=1'b1;
   end
   endtask
 
@@ -199,7 +199,7 @@ endgenerate
         end
         p_type  <=3'd0;
         p_rot   <=2'd0;
-        p_x     <=5'd0;
+        p_x     <=5'd3;
         p_y     <=5'd0;
         next_type<=3'd0;
         pr_spawn<=1'b0;
@@ -245,7 +245,7 @@ endgenerate
 
       if(piece_active && move_left && !move_right)begin
         if(!collide(p_x-5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, p_mask /* logic[15:0] */))begin
-          p_x=p_x-1'b1;
+          p_x<=p_x-1'b1;
         end
       end
 
@@ -263,7 +263,7 @@ endgenerate
               p_rot<=rot_nx;
               p_x=p_x-5'd1;
             end
-            else if(!collide(p_x-5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
+            else if(!collide(p_x+5'd1 /* logic[4:0] */, p_y /* logic[4:0] */, mask_try/* logic[15:0] */))begin
               p_rot<=rot_nx;
               p_x=p_x+5'd1;
             end
@@ -292,7 +292,7 @@ endgenerate
         end
       end
 
-      if(frame_tick && piece_active)begin
+      if(frame_tick && (cur_state==PLAY))begin
         case(phase)
 
           P_FALL:begin

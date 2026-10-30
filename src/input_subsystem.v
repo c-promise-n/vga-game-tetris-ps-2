@@ -3,7 +3,7 @@ module input_subsystem(
 input clk,
 input rst_n,
 input btn_l,btn_r,btn_u,btn_d,btn_c,
-input sw_pause,sw_restart,
+input sw_pause,sw_restart,sw_start,
 input frame_tick,
 
 output [7:0]key_pressed,
@@ -22,6 +22,7 @@ output  move_right,move_left
         .btn_c      (btn_c),
         .sw_pause   (sw_pause),
         .sw_restart (sw_restart),
+        .sw_start   (sw_start),
         .btn_pressed(level)
     );
 
